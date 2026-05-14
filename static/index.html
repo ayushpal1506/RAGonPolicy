@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>AI Medical Insurance Risk Analyzer</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;font-size:14px;background:#f5f4f0;color:#1a1a1a;min-height:100vh}
+:root{
+  --bg:#f5f4f0;--white:#ffffff;--border:#e2e0d8;--border2:#d0cec4;
+  --text:#1a1a1a;--muted:#6b6860;--light:#9a9890;
+  --danger:#c0392b;--danger-bg:#fdf0ee;--danger-border:#f5c6c0;
+  --warn:#b45309;--warn-bg:#fefce8;--warn-border:#fde68a;
+  --success:#166534;--success-bg:#f0fdf4;--success-border:#bbf7d0;
+  --radius:14px;--radius-sm:8px;
+}
+.page{max-width:1200px;margin:0 auto;padding:32px 24px}
+.header{margin-bottom:28px}
+.header h1{font-family:'Instrument Serif',serif;font-size:34px;font-weight:400;color:var(--text);letter-spacing:-0.5px;margin-bottom:4px}
+.header p{color:var(--muted);font-size:14px}
+.grid{display:grid;grid-template-columns:360px 1fr;gap:20px;align-items:start}
+.card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+.card:last-child{margin-bottom:0}
+.card-title{font-size:17px;font-weight:600;color:var(--text);margin-bottom:16px}
+.upload-zone{border:1.5px dashed var(--border2);border-radius:var(--radius-sm);padding:30px 16px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:14px;background:#fafaf8}
+.upload-zone:hover,.upload-zone.drag{border-color:#888;background:#f0efe9}
+.upload-zone input{display:none}
+.upload-zone p{color:var(--muted);font-size:13px;line-height:1.5;margin-top:6px}
+.upload-zone strong{color:var(--text)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 18px;border-radius:var(--radius-sm);border:none;font-size:14px;font-weight:500;cursor:pointer;transition:all .15s;font-family:inherit;width:100%}
+.btn:active{transform:scale(.98)}
+.btn-dark{background:#111;color:#fff}
+.btn-dark:hover{background:#333}
+.btn-sm{padding:6px 12px;font-size:12px;width:auto;border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:6px}
+.btn-sm:hover{color:var(--text);border-color:#999}
+.btn-del{padding:9px 18px;font-size:13px;width:100%;border:1px solid var(--danger-border);background:var(--danger-bg);color:var(--danger);border-radius:var(--radius-sm)}
+.btn[disabled]{opacity:.4;pointer-events:none}
+.progress-wrap{background:#e8e6e0;border-radius:4px;height:3px;overflow:hidden;margin-top:6px}
+.progress-bar{height:100%;background:#111;border-radius:4px;transition:width .3s}
+#uploadStatus{font-size:12px;color:var(--muted);margin-top:6px}
+.section-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--light);margin-bottom:8px;display:block}
+.doc-list{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.doc-item{padding:10px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);cursor:pointer;transition:all .15s}
+.doc-item:hover{border-color:#999;background:#fafaf8}
+.doc-item.active{border-color:#111;background:#f5f4f0}
+.doc-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.doc-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.task-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.task-card{border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px;cursor:pointer;transition:all .15s;background:#fafaf8}
+.task-card:hover{border-color:#999;background:#f0efe9}
+.task-card.selected{border-color:#111;background:#111;color:#fff}
+.task-card.selected .task-name{color:#fff}
+.task-card.selected .task-desc{color:#999}
+.task-icon{font-size:15px;margin-bottom:3px;display:block}
+.task-name{font-size:11px;font-weight:600;color:var(--text)}
+.task-desc{font-size:10px;color:var(--muted);margin-top:1px;line-height:1.3}
+.task-footer{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+#taskCount{font-size:12px;color:var(--muted);margin-left:auto}
+.ask-input{width:100%;background:#fafaf8;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-size:13px;outline:none;font-family:inherit;resize:vertical;min-height:72px;line-height:1.5;transition:border-color .15s}
+.ask-input:focus{border-color:#999}
+.right-col{display:flex;flex-direction:column;gap:14px}
+.result-section{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.result-header{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.result-title{font-size:16px;font-weight:600;color:var(--text)}
+.result-body{padding:16px 20px}
+.risk-badge{font-size:12px;font-weight:600;padding:4px 12px;border-radius:20px}
+.risk-badge.high{background:#fee2e2;color:var(--danger)}
+.risk-badge.medium{background:#fef9c3;color:#854d0e}
+.risk-badge.low{background:#dcfce7;color:var(--success)}
+.summary-bullets{list-style:none;display:flex;flex-direction:column;gap:10px}
+.summary-bullets li{display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.55;color:var(--text)}
+.summary-bullets li::before{content:'•';color:var(--muted);flex-shrink:0}
+.citations-row{margin-top:10px;display:flex;flex-wrap:wrap;gap:5px}
+.cite-pill{background:#f0efe9;color:#555;padding:2px 8px;border-radius:20px;font-size:11px;border:1px solid var(--border)}
+.item-list{display:flex;flex-direction:column;gap:10px}
+.item-card{padding:14px 16px;border-radius:var(--radius-sm);border:1px solid var(--border)}
+.item-card.high{background:var(--danger-bg);border-color:var(--danger-border)}
+.item-card.medium{background:var(--warn-bg);border-color:var(--warn-border)}
+.item-card.low{background:var(--success-bg);border-color:var(--success-border)}
+.item-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.item-card-label{font-size:13px;font-weight:600}
+.item-card-label.high{color:var(--danger)}
+.item-card-label.medium{color:var(--warn)}
+.item-card-label.low{color:var(--success)}
+.item-card-tag{font-size:11px;font-weight:600}
+.item-card-tag.high{color:var(--danger)}
+.item-card-tag.medium{color:var(--warn)}
+.item-card-tag.low{color:var(--success)}
+.item-text{font-size:13px;color:var(--text);line-height:1.5}
+.item-cite{font-size:11px;color:var(--muted);margin-top:6px;display:flex;gap:6px;flex-wrap:wrap}
+.plain-card{padding:12px 16px;border-radius:var(--radius-sm);border:1px solid var(--border);background:#fafaf8}
+.answer-box{background:#fafaf8;border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;margin-top:12px}
+.answer-text{font-size:13px;line-height:1.7;color:var(--text)}
+.answer-meta{margin-top:8px;font-size:11px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap}
+.confidence-badge{font-weight:600}
+.confidence-badge.high{color:var(--success)}
+.confidence-badge.medium{color:var(--warn)}
+.confidence-badge.low{color:var(--danger)}
+.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:#555;border-radius:50%;animation:spin .7s linear infinite;display:inline-block;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-row{display:flex;align-items:center;gap:10px;color:var(--muted);padding:16px 0;font-size:13px}
+.empty{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty-icon{font-size:40px;margin-bottom:12px}
+.empty h3{font-family:'Instrument Serif',serif;font-weight:400;font-size:20px;color:var(--text);margin-bottom:6px}
+.empty p{font-size:13px;line-height:1.6}
+#toast{position:fixed;bottom:20px;right:20px;background:var(--white);border:1px solid var(--border);border-radius:10px;padding:10px 16px;font-size:13px;color:var(--text);opacity:0;transform:translateY(6px);transition:opacity .25s,transform .25s;pointer-events:none;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.08)}
+#toast.show{opacity:1;transform:none}
+#toast.ok{border-left:3px solid #166534}
+#toast.err{border-left:3px solid var(--danger)}
+.flex{display:flex;align-items:center;gap:8px}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <h1>AI Medical Insurance Risk Analyzer</h1>
+    <p>Upload insurance policies, detect hidden risks, and understand coverage clearly.</p>
+  </div>
+
+  <div class="grid">
+    <!-- LEFT -->
+    <div>
+      <!-- Upload -->
+      <div class="card">
+        <div class="card-title">Upload Policy</div>
+        <label class="upload-zone" id="uploadZone">
+          <input type="file" id="fileInput" accept=".pdf"/>
+          <div style="font-size:26px">📄</div>
+          <p><strong>Drag &amp; Drop your insurance</strong><br/>PDF here</p>
+        </label>
+        <button class="btn btn-dark" onclick="document.getElementById('fileInput').click()">Upload PDF</button>
+        <div id="uploadProgress" style="display:none;margin-top:10px">
+          <div id="uploadStatus"></div>
+          <div class="progress-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+        </div>
+      </div>
+
+      <!-- Documents -->
+      <div class="card" id="docsCard" style="display:none">
+        <div class="flex" style="margin-bottom:12px">
+          <div class="card-title" style="margin:0">Documents</div>
+          <button class="btn-sm" onclick="loadDocuments()" style="margin-left:auto">↻</button>
+        </div>
+        <div class="doc-list" id="docList"></div>
+        <button class="btn btn-del" id="deleteBtn" style="display:none" onclick="deleteCurrentDoc()">Remove document</button>
+      </div>
+
+      <!-- Tasks -->
+      <div class="card" id="taskCard" style="display:none">
+        <div class="card-title">Analysis Tasks</div>
+        <div class="task-grid" id="taskGrid"></div>
+        <div class="task-footer">
+          <button class="btn-sm" onclick="selectAllTasks()">Select all</button>
+          <span id="taskCount">4 selected</span>
+        </div>
+        <button class="btn btn-dark" onclick="runAnalysis()">Analyze Policy</button>
+      </div>
+
+      <!-- Ask -->
+      <div class="card" id="askCard" style="display:none">
+        <div class="card-title">Ask About Your Policy</div>
+        <textarea class="ask-input" id="askInput" placeholder="Example: Does this policy cover cancer treatment?"></textarea>
+        <button class="btn btn-dark" style="margin-top:10px" onclick="askQuestion()">Ask</button>
+        <div id="askResult"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="right-col" id="rightCol">
+      <div class="empty">
+        <div class="empty-icon">🛡️</div>
+        <h3>No policy analyzed yet</h3>
+        <p>Upload a PDF and click <strong>Analyze Policy</strong><br/>to see your full risk report here</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API = '';
+let currentDoc = null;
+let selectedTasks = new Set(['summary','risks','exclusions','key_limits']);
+
+const TASKS = [
+  {key:'summary',        icon:'📋', name:'Summary',      desc:'Overview & purpose'},
+  {key:'risks',          icon:'⚠️',  name:'Risks',        desc:'Liabilities & warnings'},
+  {key:'exclusions',     icon:'🚫', name:'Exclusions',   desc:'What is not covered'},
+  {key:'key_limits',     icon:'💰', name:'Limits',       desc:'Caps & thresholds'},
+  {key:'obligations',    icon:'📌', name:'Obligations',  desc:'Policyholder duties'},
+  {key:'claims_process', icon:'📬', name:'Claims',       desc:'Steps & deadlines'},
+];
+
+function toast(msg, type='ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'show ' + type;
+  setTimeout(() => el.className = '', 3000);
+}
+
+function renderTaskGrid() {
+  document.getElementById('taskGrid').innerHTML = TASKS.map(t => `
+    <div class="task-card ${selectedTasks.has(t.key)?'selected':''}" onclick="toggleTask('${t.key}',this)">
+      <span class="task-icon">${t.icon}</span>
+      <div class="task-name">${t.name}</div>
+      <div class="task-desc">${t.desc}</div>
+    </div>`).join('');
+}
+
+// upload
+const zone = document.getElementById('uploadZone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
+zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag'); handleFile(e.dataTransfer.files[0]); });
+document.getElementById('fileInput').addEventListener('change', e => handleFile(e.target.files[0]));
+
+async function handleFile(file) {
+  if (!file || !file.name.toLowerCase().endsWith('.pdf')) { toast('Please select a PDF', 'err'); return; }
+  const prog = document.getElementById('uploadProgress');
+  const bar  = document.getElementById('progressBar');
+  const stat = document.getElementById('uploadStatus');
+  prog.style.display = 'block';
+  const fd = new FormData(); fd.append('file', file);
+  try {
+    stat.textContent = 'Extracting text & detecting sections…'; bar.style.width = '30%';
+    const res = await fetch(`${API}/upload`, { method:'POST', body: fd });
+    bar.style.width = '70%';
+    if (!res.ok) { const e = await res.json(); throw new Error(e.detail); }
+    const data = await res.json();
+    bar.style.width = '100%';
+    stat.textContent = `Done — ${data.total_chunks} chunks, ${data.total_pages} pages`;
+    toast(`Indexed ${file.name}`, 'ok');
+    setTimeout(() => { prog.style.display='none'; bar.style.width='0%'; }, 2000);
+    loadDocuments(data.doc_id);
+  } catch(e) {
+    stat.textContent = 'Error: ' + e.message;
+    bar.style.width = '0%';
+    toast(e.message, 'err');
+  }
+}
+
+async function loadDocuments(selectId=null) {
+  const res  = await fetch(`${API}/documents`);
+  const data = await res.json();
+  const list = document.getElementById('docList');
+  const card = document.getElementById('docsCard');
+  if (!data.documents.length) { card.style.display='none'; return; }
+  card.style.display = 'block';
+  list.innerHTML = data.documents.map(d => {
+    const id = d.doc_id || d;
+    return `<div class="doc-item ${id===currentDoc?'active':''}" onclick="selectDoc('${id}')">
+      <div class="doc-name">📄 ${id}</div>
+      <div class="doc-meta">${d.total_chunks||'?'} chunks · ${d.total_pages||'?'} pages</div>
+    </div>`;
+  }).join('');
+  if (selectId) selectDoc(selectId);
+}
+
+function selectDoc(id) {
+  currentDoc = id;
+  document.querySelectorAll('.doc-item').forEach(el => el.classList.toggle('active', el.querySelector('.doc-name').textContent.includes(id)));
+  document.getElementById('deleteBtn').style.display = 'flex';
+  document.getElementById('taskCard').style.display = 'block';
+  document.getElementById('askCard').style.display = 'block';
+  renderTaskGrid();
+  document.getElementById('rightCol').innerHTML = `
+    <div class="empty">
+      <div class="empty-icon">🛡️</div>
+      <h3>Ready to analyze</h3>
+      <p>Select tasks and click <strong>Analyze Policy</strong></p>
+    </div>`;
+}
+
+async function deleteCurrentDoc() {
+  if (!currentDoc || !confirm(`Remove ${currentDoc}?`)) return;
+  await fetch(`${API}/documents/${currentDoc}`, { method:'DELETE' });
+  toast(`Removed ${currentDoc}`, 'ok');
+  currentDoc = null;
+  document.getElementById('deleteBtn').style.display = 'none';
+  document.getElementById('taskCard').style.display = 'none';
+  document.getElementById('askCard').style.display = 'none';
+  document.getElementById('rightCol').innerHTML = `<div class="empty"><div class="empty-icon">🛡️</div><h3>No policy analyzed yet</h3><p>Upload a PDF and click Analyze Policy</p></div>`;
+  loadDocuments();
+}
+
+function toggleTask(key, el) {
+  selectedTasks.has(key) ? selectedTasks.delete(key) : selectedTasks.add(key);
+  el.classList.toggle('selected');
+  document.getElementById('taskCount').textContent = `${selectedTasks.size} selected`;
+}
+
+function selectAllTasks() {
+  TASKS.forEach(t => selectedTasks.add(t.key));
+  document.querySelectorAll('.task-card').forEach(el => el.classList.add('selected'));
+  document.getElementById('taskCount').textContent = `${selectedTasks.size} selected`;
+}
+
+async function runAnalysis() {
+  if (!currentDoc || !selectedTasks.size) { toast('Select a doc and at least one task', 'err'); return; }
+  const rc = document.getElementById('rightCol');
+  rc.innerHTML = `<div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:24px"><div class="loading-row"><div class="spinner"></div>Analyzing ${selectedTasks.size} task(s) in parallel…</div></div>`;
+  try {
+    const res = await fetch(`${API}/analyze`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ doc_id: currentDoc, tasks: [...selectedTasks] })
+    });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.detail); }
+    const data = await res.json();
+    renderResults(data.results);
+  } catch(e) {
+    rc.innerHTML = `<div style="background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:24px;color:var(--danger)">${e.message}</div>`;
+    toast(e.message, 'err');
+  }
+}
+
+function renderResults(results) {
+  const rc = document.getElementById('rightCol');
+  rc.innerHTML = '';
+  let overallRisk = null;
+  if (results.risks?.risks) {
+    const has = s => results.risks.risks.some(r => r.severity === s);
+    overallRisk = has('high') ? 'high' : has('medium') ? 'medium' : 'low';
+  }
+  for (const [key, data] of Object.entries(results)) {
+    const t = TASKS.find(x => x.key === key);
+    const badge = (key==='summary' && overallRisk)
+      ? `<span class="risk-badge ${overallRisk}">${overallRisk.charAt(0).toUpperCase()+overallRisk.slice(1)} Risk</span>` : '';
+    const sec = document.createElement('div');
+    sec.className = 'result-section';
+    sec.innerHTML = `
+      <div class="result-header">
+        <span class="result-title">${t?.name||key}</span>${badge}
+      </div>
+      <div class="result-body">${renderTaskResult(key, data)}</div>`;
+    rc.appendChild(sec);
+  }
+}
+
+function renderTaskResult(key, data) {
+  if (data.error) return `<span style="color:var(--muted);font-size:13px">${data.error}</span>`;
+  if (data.parse_error) return `<pre style="white-space:pre-wrap;font-size:11px;color:var(--muted)">${data.raw_response||''}</pre>`;
+
+  if (key === 'summary') {
+    const text  = data.summary || '';
+    const parts = text.split(/\.\s+/).filter(s => s.trim().length > 10);
+    const cites = (data.citations||[]).map(c=>`<span class="cite-pill">p.${c.page} · ${c.section}</span>`).join('');
+    const body  = parts.length > 1
+      ? `<ul class="summary-bullets">${parts.map(b=>`<li>${b.replace(/\.$/,'')}.</li>`).join('')}</ul>`
+      : `<div style="font-size:13px;line-height:1.7">${text}</div>`;
+    return body + `<div class="citations-row">${cites}</div>`;
+  }
+
+  if (key === 'risks') {
+    const labels = {high:'High Risk Clause', medium:'Medium Risk Clause', low:'Low Risk Clause'};
+    const tags   = {high:'Claim Rejection Risk', medium:'Financial Impact', low:'Minor Concern'};
+    return '<div class="item-list">'+(data.risks||[]).map(r => {
+      const s = r.severity||'low';
+      return `<div class="item-card ${s}">
+        <div class="item-card-header">
+          <span class="item-card-label ${s}">${labels[s]}</span>
+          <span class="item-card-tag ${s}">${tags[s]}</span>
+        </div>
+        <div class="item-text">${r.risk}</div>
+        <div class="item-cite"><span class="cite-pill">p.${r.page}</span><span class="cite-pill">${r.section}</span></div>
+      </div>`;
+    }).join('')+'</div>';
+  }
+
+  if (key === 'exclusions') {
+    return '<div class="item-list">'+(data.exclusions||[]).map(e=>`
+      <div class="plain-card">
+        <div class="item-text">🚫 ${e.exclusion}</div>
+        <div class="item-cite"><span class="cite-pill">p.${e.page}</span><span class="cite-pill">${e.section}</span></div>
+      </div>`).join('')+'</div>';
+  }
+
+  if (key === 'key_limits') {
+    return '<div class="item-list">'+(data.limits||[]).map(l=>`
+      <div class="plain-card">
+        <div class="item-card-header" style="margin-bottom:4px">
+          <span style="font-size:13px;font-weight:600;color:#1d4ed8">${l.value}</span>
+        </div>
+        <div class="item-text">${l.limit}</div>
+        <div class="item-cite"><span class="cite-pill">p.${l.page}</span><span class="cite-pill">${l.section}</span></div>
+      </div>`).join('')+'</div>';
+  }
+
+  if (key === 'obligations') {
+    return '<div class="item-list">'+(data.obligations||[]).map(o=>`
+      <div class="plain-card">
+        <div class="item-text">📌 ${o.obligation}</div>
+        <div class="item-cite"><span class="cite-pill">p.${o.page}</span><span class="cite-pill">${o.section}</span></div>
+      </div>`).join('')+'</div>';
+  }
+
+  if (key === 'claims_process') {
+    return '<div class="item-list">'+(data.claims_steps||[]).map((s,i)=>`
+      <div class="plain-card">
+        <div class="item-card-header" style="margin-bottom:4px">
+          <span style="font-size:12px;font-weight:600;color:#555">Step ${i+1}</span>
+          ${s.deadline?`<span style="font-size:11px;color:var(--warn);font-weight:500">${s.deadline}</span>`:''}
+        </div>
+        <div class="item-text">${s.step}</div>
+        <div class="item-cite"><span class="cite-pill">p.${s.page}</span><span class="cite-pill">${s.section}</span></div>
+      </div>`).join('')+'</div>';
+  }
+
+  return `<pre style="white-space:pre-wrap;font-size:11px;color:var(--muted)">${JSON.stringify(data,null,2)}</pre>`;
+}
+
+async function askQuestion() {
+  const q = document.getElementById('askInput').value.trim();
+  if (!q || !currentDoc) { toast('Enter a question first', 'err'); return; }
+  const rd = document.getElementById('askResult');
+  rd.innerHTML = '<div class="loading-row"><div class="spinner"></div>Searching document…</div>';
+  try {
+    const res = await fetch(`${API}/ask`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ doc_id: currentDoc, question: q })
+    });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.detail); }
+    const data = await res.json();
+    const ans  = data.answer;
+    const cites = (ans.citations||[]).map(c=>`<span class="cite-pill">p.${c.page} · ${c.section}</span>`).join('');
+    rd.innerHTML = `
+      <div class="answer-box">
+        <div class="answer-text">${ans.answer||JSON.stringify(ans)}</div>
+        <div class="answer-meta">
+          Confidence: <span class="confidence-badge ${ans.confidence||''}">${ans.confidence||'—'}</span>
+          &nbsp;· ${data.chunks_used} sources
+          &nbsp;· Pages ${data.source_pages?.join(', ')||'—'}
+        </div>
+        <div class="citations-row">${cites}</div>
+      </div>`;
+  } catch(e) {
+    rd.innerHTML = `<div style="color:var(--danger);font-size:13px;margin-top:8px">${e.message}</div>`;
+    toast(e.message, 'err');
+  }
+}
+
+loadDocuments();
+</script>
+</body>
+</html>
